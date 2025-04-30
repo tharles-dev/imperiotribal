@@ -21,13 +21,15 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initializeApp() async {
     try {
-      // Simulando carregamento inicial
+      // Aguarda a inicialização do GameController
       await Future.delayed(const Duration(seconds: 2));
 
-      // TODO: Verificar se existe usuário
-      const hasUser = false; // Mockado por enquanto
+      if (_gameController.hasError.value) {
+        Get.offAllNamed(Routes.error);
+        return;
+      }
 
-      if (hasUser) {
+      if (_gameController.hasCurrentUser) {
         Get.offAllNamed(Routes.game);
       } else {
         Get.offAllNamed(Routes.onboarding);
