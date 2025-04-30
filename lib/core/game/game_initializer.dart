@@ -7,7 +7,7 @@ import 'package:imperio_tribal_app/data/repositories/user_repository.dart';
 import 'package:imperio_tribal_app/data/repositories/village_repository.dart';
 import 'package:imperio_tribal_app/data/repositories/resource_repository.dart';
 import 'package:imperio_tribal_app/data/repositories/building_repository.dart';
-import 'package:imperio_tribal_app/core/game/production_rates.dart';
+import 'package:imperio_tribal_app/core/constants/production_rates.dart';
 
 class GameInitializer {
   final _userRepository = UserRepository();
