@@ -11,7 +11,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final GameController _gameController = Get.put(GameController());
+  final GameController _gameController = Get.find<GameController>();
 
   @override
   void initState() {

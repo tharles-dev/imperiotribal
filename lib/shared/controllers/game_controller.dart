@@ -38,8 +38,11 @@ class GameController extends GetxController {
       AppLogger.info('Verificando existência de usuário: $hasUser');
 
       if (hasUser) {
-        // TODO: Carregar usuário atual
-        // currentUser.value = await _userRepository.findById(1);
+        // Carrega o primeiro usuário (não NPC) como usuário atual
+        final users = await _userRepository.findAll();
+        final mainUser = users.firstWhere((user) => !user.isNpc);
+        currentUser.value = mainUser;
+        AppLogger.info('Usuário atual carregado: ${mainUser.name}');
       }
     } catch (e, stackTrace) {
       AppLogger.error('Erro ao inicializar o jogo', e, stackTrace);

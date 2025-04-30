@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:imperio_tribal_app/core/routes/app_pages.dart';
 import 'package:imperio_tribal_app/core/theme/app_theme.dart';
+import 'package:imperio_tribal_app/shared/controllers/game_controller.dart';
 
 void main() {
+  // Inicializa o GameController globalmente
+  Get.put(GameController(), permanent: true);
+
   runApp(const MyApp());
 }
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:imperio_tribal_app/core/routes/app_pages.dart';
+import 'package:imperio_tribal_app/core/game/game_initializer.dart';
+import 'package:imperio_tribal_app/core/utils/logger.dart';
+import 'package:imperio_tribal_app/shared/controllers/game_controller.dart';
 
 class CreateUserScreen extends StatefulWidget {
   const CreateUserScreen({super.key});
@@ -12,7 +15,10 @@ class CreateUserScreen extends StatefulWidget {
 class _CreateUserScreenState extends State<CreateUserScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _gameController = Get.find<GameController>();
+  final _gameInitializer = GameInitializer();
   String _selectedTribe = 'Romanos';
+  bool _isLoading = false;
 
   final List<String> _tribes = [
     'Romanos',
@@ -28,10 +34,32 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
     super.dispose();
   }
 
-  void _createUser() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implementar criação de usuário
+  Future<void> _createUser() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      AppLogger.info('Criando usuário: ${_nameController.text}');
+
+      // Inicializa o jogo com o usuário
+      final user = await _gameInitializer.initializeGame(
+        name: _nameController.text,
+        tribe: _selectedTribe,
+        createdAt: DateTime.now(),
+      );
+
+      // Atualiza o usuário atual no GameController
+      _gameController.currentUser.value = user;
+
+      AppLogger.info('Usuário criado com sucesso');
       Get.offAllNamed(Routes.game);
+    } catch (e, stackTrace) {
+      AppLogger.error('Erro ao criar usuário', e, stackTrace);
+      _gameController.setError('Erro ao criar usuário: $e');
+      Get.offAllNamed(Routes.error);
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -83,8 +111,11 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
               ),
               const Spacer(),
               ElevatedButton(
-                onPressed: _createUser,
-                child: const Text('Criar Jogador'),
+                onPressed: _isLoading ? null : _createUser,
+                child:
+                    _isLoading
+                        ? const CircularProgressIndicator()
+                        : const Text('Criar Jogador'),
               ),
             ],
           ),
