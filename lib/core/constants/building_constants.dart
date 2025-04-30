@@ -7,6 +7,10 @@ class BuildingConstants {
   static const int maxWoodcutterLevel = 20;
   static const int maxClayPitLevel = 20;
   static const int maxIronMineLevel = 20;
+  static const int maxTownHallLevel = 20;
+  static const int maxFarmLevel = 20;
+  static const int maxBarracksLevel = 20;
+  static const int maxStableLevel = 20;
 
   // Capacidade base do armazém (por recurso)
   static const int baseStorageCapacity = 1000;
@@ -17,6 +21,10 @@ class BuildingConstants {
     BuildingType.woodcutter: {'wood': 50, 'clay': 30, 'iron': 20},
     BuildingType.clayPit: {'wood': 30, 'clay': 50, 'iron': 20},
     BuildingType.ironMine: {'wood': 20, 'clay': 30, 'iron': 50},
+    BuildingType.townHall: {'wood': 200, 'clay': 200, 'iron': 200},
+    BuildingType.farm: {'wood': 80, 'clay': 60, 'iron': 40},
+    BuildingType.barracks: {'wood': 150, 'clay': 120, 'iron': 100},
+    BuildingType.stable: {'wood': 180, 'clay': 150, 'iron': 120},
   };
 
   // Multiplicador de custo por nível
@@ -28,6 +36,10 @@ class BuildingConstants {
     BuildingType.woodcutter: 30,
     BuildingType.clayPit: 30,
     BuildingType.ironMine: 30,
+    BuildingType.townHall: 120,
+    BuildingType.farm: 45,
+    BuildingType.barracks: 90,
+    BuildingType.stable: 90,
   };
 
   // Multiplicador de tempo por nível
@@ -39,6 +51,10 @@ class BuildingConstants {
     BuildingType.woodcutter: {'storage': 1},
     BuildingType.clayPit: {'storage': 1},
     BuildingType.ironMine: {'storage': 1},
+    BuildingType.townHall: {'warehouse': 1},
+    BuildingType.farm: {'townHall': 1},
+    BuildingType.barracks: {'townHall': 3},
+    BuildingType.stable: {'townHall': 5, 'barracks': 3},
   };
 
   static int calculateStorageCapacity(int level) {
@@ -77,6 +93,35 @@ class BuildingConstants {
         return level <= maxClayPitLevel;
       case BuildingType.ironMine:
         return level <= maxIronMineLevel;
+      case BuildingType.townHall:
+        return level <= maxTownHallLevel;
+      case BuildingType.farm:
+        return level <= maxFarmLevel;
+      case BuildingType.barracks:
+        return level <= maxBarracksLevel;
+      case BuildingType.stable:
+        return level <= maxStableLevel;
+    }
+  }
+
+  static int getLevelRequirement(BuildingType type) {
+    switch (type) {
+      case BuildingType.townHall:
+        return 0;
+      case BuildingType.woodcutter:
+        return 1;
+      case BuildingType.clayPit:
+        return 2;
+      case BuildingType.ironMine:
+        return 3;
+      case BuildingType.farm:
+        return 4;
+      case BuildingType.barracks:
+        return 5;
+      case BuildingType.warehouse:
+        return 6;
+      case BuildingType.stable:
+        return 7;
     }
   }
 }

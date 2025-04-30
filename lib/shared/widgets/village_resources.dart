@@ -32,46 +32,73 @@ class VillageResources extends StatelessWidget {
 
   Widget _buildResourceItem(String icon, int amount, int maxCapacity) {
     final isAtCapacity = amount >= maxCapacity;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Image.asset('assets/images/$icon.png', width: 20, height: 20),
-        const SizedBox(width: 4),
-        Text(
-          amount.toString(),
-          style: TextStyle(
-            color: isAtCapacity ? Colors.red : Colors.brown[900],
-            fontWeight: FontWeight.bold,
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.brown[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isAtCapacity ? Colors.red[200]! : Colors.brown[200]!,
           ),
         ),
-      ],
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/images/$icon.png', width: 20, height: 20),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                amount.toString(),
+                style: TextStyle(
+                  color: isAtCapacity ? Colors.red : Colors.brown[900],
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildStorageItem(int maxCapacity) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Image.asset('assets/images/warehouse.png', width: 20, height: 20),
-        const SizedBox(width: 4),
-        Text(
-          maxCapacity.toString(),
-          style: TextStyle(
-            color: Colors.brown[900],
-            fontWeight: FontWeight.bold,
-          ),
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.brown[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.brown[200]!),
         ),
-      ],
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/images/warehouse.png', width: 20, height: 20),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                maxCapacity.toString(),
+                style: TextStyle(
+                  color: Colors.brown[900],
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildVerticalDivider() {
-    return Container(
-      height: 24,
-      width: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: Colors.brown[200],
-    );
+    return const SizedBox(width: 4);
   }
 
   @override
@@ -80,7 +107,7 @@ class VillageResources extends StatelessWidget {
       future: _loadResourcesAndCapacity(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
@@ -90,21 +117,23 @@ class VillageResources extends StatelessWidget {
         final (resources, maxCapacity, _) = snapshot.data!;
 
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.brown[50],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.brown[200]!),
             boxShadow: [
               BoxShadow(
-                color: Colors.brown[200]!.withValues(),
+                // ignore: deprecated_member_use
+                color: Colors.brown[200]!.withOpacity(0.5),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildResourceItem('wood', resources.wood, maxCapacity),
               _buildVerticalDivider(),
