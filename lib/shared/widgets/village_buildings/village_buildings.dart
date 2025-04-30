@@ -81,14 +81,7 @@ class _VillageBuildingsState extends State<VillageBuildings> {
               buildings: _buildings,
               onUpgrade: _loadBuildings,
             ),
-            const SizedBox(height: 24),
-
-            // Edifícios bloqueados
-            const Text(
-              'Edifícios Bloqueados',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             LockedBuildings(buildings: _buildings),
           ],
         ),

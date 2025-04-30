@@ -191,4 +191,58 @@ class GameResourceManager {
       rethrow;
     }
   }
+
+  // Deduz recursos para uma construção
+  Future<bool> deductResourcesForUpgrade(
+    int villageId,
+    Map<String, int> upgradeCost,
+  ) async {
+    try {
+      AppLogger.info(
+        'Tentando deduzir recursos para construção na vila $villageId: '
+        'Madeira: ${upgradeCost['wood']}, '
+        'Argila: ${upgradeCost['clay']}, '
+        'Ferro: ${upgradeCost['iron']}',
+      );
+
+      // Busca os recursos atuais
+      final resources = await _resourceRepository.findByVillageId(villageId);
+      if (resources == null) {
+        AppLogger.error('Recursos não encontrados para a vila $villageId');
+        return false;
+      }
+
+      // Verifica se há recursos suficientes
+      if (resources.wood < upgradeCost['wood']! ||
+          resources.clay < upgradeCost['clay']! ||
+          resources.iron < upgradeCost['iron']!) {
+        AppLogger.info('Recursos insuficientes para construção');
+        return false;
+      }
+
+      // Deduz os recursos
+      await _resourceRepository.updateResources(
+        villageId,
+        wood: resources.wood - upgradeCost['wood']!,
+        clay: resources.clay - upgradeCost['clay']!,
+        iron: resources.iron - upgradeCost['iron']!,
+      );
+
+      AppLogger.info(
+        'Recursos deduzidos com sucesso. Novos valores: '
+        'Madeira: ${resources.wood - upgradeCost['wood']!}, '
+        'Argila: ${resources.clay - upgradeCost['clay']!}, '
+        'Ferro: ${resources.iron - upgradeCost['iron']!}',
+      );
+
+      return true;
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Erro ao deduzir recursos para construção',
+        e,
+        stackTrace,
+      );
+      return false;
+    }
+  }
 }

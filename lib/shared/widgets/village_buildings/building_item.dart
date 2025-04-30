@@ -85,13 +85,13 @@ class BuildingItem extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Custos de upgrade
-          if (!isLocked) ...[
+          if (!isLocked && !isUpgrading && upgradeCost.isNotEmpty) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildResourceCost('wood', upgradeCost['wood']!),
-                _buildResourceCost('clay', upgradeCost['clay']!),
-                _buildResourceCost('iron', upgradeCost['iron']!),
+                _buildResourceCost('wood', upgradeCost['wood'] ?? 0),
+                _buildResourceCost('clay', upgradeCost['clay'] ?? 0),
+                _buildResourceCost('iron', upgradeCost['iron'] ?? 0),
               ],
             ),
             const SizedBox(height: 8),
@@ -116,14 +116,29 @@ class BuildingItem extends StatelessWidget {
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             )
           else if (isUpgrading)
-            const Center(
-              child: Text(
-                'Em construção',
-                style: TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
+            Column(
+              children: [
+                LinearProgressIndicator(
+                  value: 1 - (buildTime / (buildTime + 1)), // Simples progresso
+                  backgroundColor: Colors.grey[200],
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
                 ),
-              ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.timer, size: 16, color: Colors.green),
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatDuration(buildTime),
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             )
           else
             SizedBox(

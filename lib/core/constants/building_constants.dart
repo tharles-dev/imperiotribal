@@ -47,12 +47,12 @@ class BuildingConstants {
 
   // Requisitos de nível para construção/upgrade
   static const Map<BuildingType, Map<String, int>> levelRequirements = {
-    BuildingType.warehouse: {'woodcutter': 1, 'clayPit': 1, 'ironMine': 1},
-    BuildingType.woodcutter: {'storage': 1},
-    BuildingType.clayPit: {'storage': 1},
-    BuildingType.ironMine: {'storage': 1},
-    BuildingType.townHall: {'warehouse': 1},
-    BuildingType.farm: {'townHall': 1},
+    BuildingType.warehouse: {},
+    BuildingType.woodcutter: {},
+    BuildingType.clayPit: {},
+    BuildingType.ironMine: {},
+    BuildingType.townHall: {},
+    BuildingType.farm: {},
     BuildingType.barracks: {'townHall': 3},
     BuildingType.stable: {'townHall': 5, 'barracks': 3},
   };

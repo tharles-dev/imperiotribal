@@ -24,11 +24,32 @@ class BuildingQueueManager {
 
       // Busca todas as construções pendentes
       final pendingUpgrades = await _upgradeQueueRepository.findAllPending();
+      AppLogger.info(
+        'Total de construções pendentes: ${pendingUpgrades.length}',
+      );
+
       final now = DateTime.now().millisecondsSinceEpoch;
+      AppLogger.info(
+        'Tempo atual: ${DateTime.fromMillisecondsSinceEpoch(now)}',
+      );
 
       for (final upgrade in pendingUpgrades) {
+        AppLogger.info(
+          'Verificando upgrade: Building ID ${upgrade.buildingId}, '
+          'Tempo final: ${DateTime.fromMillisecondsSinceEpoch(upgrade.endTime)}, '
+          'Status: ${upgrade.status}',
+        );
+
         if (now >= upgrade.endTime) {
+          AppLogger.info(
+            'Upgrade pronto para processamento: Building ID ${upgrade.buildingId}',
+          );
           await _processCompletedUpgrade(upgrade);
+        } else {
+          AppLogger.info(
+            'Upgrade ainda em andamento: Building ID ${upgrade.buildingId}, '
+            'Tempo restante: ${(upgrade.endTime - now) / 1000} segundos',
+          );
         }
       }
 
@@ -44,30 +65,46 @@ class BuildingQueueManager {
     try {
       AppLogger.info(
         'Processando upgrade completo: Building ID ${upgrade.buildingId}, '
-        'Nível alvo ${upgrade.targetLevel}',
+        'Nível alvo ${upgrade.targetLevel}, '
+        'Tempo final: ${DateTime.fromMillisecondsSinceEpoch(upgrade.endTime)}',
       );
 
       // Atualiza o nível do edifício
       final building = await _buildingRepository.findById(upgrade.buildingId);
       if (building != null) {
+        AppLogger.info(
+          'Edifício encontrado: ${building.type} (ID: ${building.id})',
+        );
+
         // Atualiza o nível
         await _buildingRepository.update(
           building.copyWith(level: upgrade.targetLevel),
+        );
+        AppLogger.info(
+          'Nível do edifício atualizado para ${upgrade.targetLevel}',
         );
 
         // Marca como completed na fila
         if (upgrade.id != null) {
           await _upgradeQueueRepository.updateStatus(upgrade.id!, 'completed');
+          AppLogger.info('Status do upgrade atualizado para completed');
         }
 
         // Recalcula produção se for um edifício produtor
         if (_isProductionBuilding(building.type)) {
+          AppLogger.info(
+            'Recalculando produção para edifício ${building.type}',
+          );
           await _resourceManager.calculateProduction(upgrade.villageId);
         }
 
         AppLogger.info(
           'Upgrade concluído com sucesso: ${building.type} '
           'para nível ${upgrade.targetLevel}',
+        );
+      } else {
+        AppLogger.error(
+          'Edifício não encontrado para ID ${upgrade.buildingId}',
         );
       }
     } catch (e, stackTrace) {

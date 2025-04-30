@@ -11,52 +11,84 @@ class LockedBuildings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Mapeamento direto entre os nomes do enum e do banco
+    final typeMap = {
+      BuildingType.townHall: 'town_hall',
+      BuildingType.warehouse: 'warehouse',
+      BuildingType.farm: 'farm',
+      BuildingType.ironMine: 'iron_mine',
+      BuildingType.clayPit: 'clay_pit',
+      BuildingType.woodcutter: 'woodcutter',
+      BuildingType.barracks: 'barracks',
+      BuildingType.stable: 'stable',
+    };
+
     final lockedBuildings =
         BuildingType.values.where((type) {
-          return !buildings.any(
-            (building) => building.type == type.toString().split('.').last,
-          );
+          final dbType = typeMap[type];
+          if (dbType == null) {
+            return false;
+          }
+
+          final isLocked = !buildings.any((b) => b.type == dbType);
+
+          return isLocked;
         }).toList();
 
-    if (lockedBuildings.isEmpty) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('Todos os edifícios já estão construídos'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Edifícios Bloqueados',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-      );
-    }
+        const SizedBox(height: 8),
+        if (lockedBuildings.isEmpty)
+          const Text('Nenhum edifício bloqueado')
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                lockedBuildings.map((type) {
+                  final building = BuildingModel(
+                    id: 0,
+                    type: typeMap[type]!,
+                    level: 0,
+                    villageId: 0,
+                    createdAt: DateTime.now().millisecondsSinceEpoch,
+                  );
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: lockedBuildings.length,
-      itemBuilder: (context, index) {
-        final type = lockedBuildings[index];
-        final upgradeCost = BuildingConstants.calculateUpgradeCost(type, 1);
-        final buildTime = BuildingConstants.calculateBuildTime(type, 1);
-        final levelRequirement = BuildingConstants.getLevelRequirement(type);
+                  String lockReason;
+                  if (type == BuildingType.barracks) {
+                    lockReason = 'Requer Centro da Vila nível 3';
+                  } else if (type == BuildingType.stable) {
+                    lockReason =
+                        'Requer Centro da Vila nível 5 e Quartel nível 3';
+                  } else {
+                    lockReason = 'Edifício ainda não disponível';
+                  }
 
-        final building = BuildingModel(
-          id: 0,
-          type: type.name,
-          level: 0,
-          villageId: 0,
-          createdAt: DateTime.now().millisecondsSinceEpoch,
-        );
+                  final upgradeCost = BuildingConstants.calculateUpgradeCost(
+                    type,
+                    1,
+                  );
+                  final buildTime = BuildingConstants.calculateBuildTime(
+                    type,
+                    1,
+                  );
 
-        return BuildingItem(
-          building: building,
-          upgradeCost: upgradeCost,
-          buildTime: buildTime,
-          isLocked: true,
-          lockReason:
-              levelRequirement > 0
-                  ? 'Requer Centro da Vila nível $levelRequirement'
-                  : 'Edifício ainda não disponível',
-          onUpgrade: null,
-        );
-      },
+                  return BuildingItem(
+                    building: building,
+                    upgradeCost: upgradeCost,
+                    buildTime: buildTime,
+                    isLocked: true,
+                    lockReason: lockReason,
+                    onUpgrade: null,
+                  );
+                }).toList(),
+          ),
+      ],
     );
   }
 }

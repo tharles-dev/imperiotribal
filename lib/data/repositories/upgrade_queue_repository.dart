@@ -107,8 +107,11 @@ class UpgradeQueueRepository {
       final db = await _dbHelper.database;
       final maps = await db.query(
         'upgrades_queue',
-        where: 'village_id = ?',
-        whereArgs: [villageId],
+        where: 'village_id = ? AND status = ?',
+        whereArgs: [villageId, 'pending'],
+      );
+      AppLogger.info(
+        'Encontrados ${maps.length} upgrades pendentes para a vila $villageId',
       );
       return maps.map((map) => UpgradeQueueModel.fromMap(map)).toList();
     } catch (e, stackTrace) {
