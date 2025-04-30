@@ -1,1 +1,1 @@
-enum BuildingType { storage, woodcutter, clayPit, ironMine }
+enum BuildingType { warehouse, woodcutter, clayPit, ironMine }

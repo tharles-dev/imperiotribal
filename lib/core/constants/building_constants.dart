@@ -13,7 +13,7 @@ class BuildingConstants {
 
   // Custo base de construção/upgrade
   static const Map<BuildingType, Map<String, int>> baseCosts = {
-    BuildingType.storage: {'wood': 100, 'clay': 100, 'iron': 100},
+    BuildingType.warehouse: {'wood': 100, 'clay': 100, 'iron': 100},
     BuildingType.woodcutter: {'wood': 50, 'clay': 30, 'iron': 20},
     BuildingType.clayPit: {'wood': 30, 'clay': 50, 'iron': 20},
     BuildingType.ironMine: {'wood': 20, 'clay': 30, 'iron': 50},
@@ -24,7 +24,7 @@ class BuildingConstants {
 
   // Tempo base de construção/upgrade (em segundos)
   static const Map<BuildingType, int> baseBuildTime = {
-    BuildingType.storage: 60,
+    BuildingType.warehouse: 60,
     BuildingType.woodcutter: 30,
     BuildingType.clayPit: 30,
     BuildingType.ironMine: 30,
@@ -35,7 +35,7 @@ class BuildingConstants {
 
   // Requisitos de nível para construção/upgrade
   static const Map<BuildingType, Map<String, int>> levelRequirements = {
-    BuildingType.storage: {'woodcutter': 1, 'clayPit': 1, 'ironMine': 1},
+    BuildingType.warehouse: {'woodcutter': 1, 'clayPit': 1, 'ironMine': 1},
     BuildingType.woodcutter: {'storage': 1},
     BuildingType.clayPit: {'storage': 1},
     BuildingType.ironMine: {'storage': 1},
@@ -69,7 +69,7 @@ class BuildingConstants {
   // Verifica se o nível é válido para o tipo de edifício
   static bool isValidLevel(BuildingType type, int level) {
     switch (type) {
-      case BuildingType.storage:
+      case BuildingType.warehouse:
         return level <= maxStorageLevel;
       case BuildingType.woodcutter:
         return level <= maxWoodcutterLevel;

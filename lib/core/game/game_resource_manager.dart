@@ -20,12 +20,13 @@ class GameResourceManager {
       final storageLevel =
           buildings
               .firstWhere(
-                (building) => building.type == BuildingType.storage.toString(),
+                (building) =>
+                    building.type == BuildingType.warehouse.toString(),
                 orElse:
                     () => BuildingModel(
                       id: 0,
                       villageId: villageId,
-                      type: BuildingType.storage.toString(),
+                      type: BuildingType.warehouse.toString(),
                       level: 1,
                       createdAt: DateTime.now().millisecondsSinceEpoch,
                     ),
@@ -129,12 +130,13 @@ class GameResourceManager {
       final storageLevel =
           buildings
               .firstWhere(
-                (building) => building.type == BuildingType.storage.toString(),
+                (building) =>
+                    building.type == BuildingType.warehouse.toString(),
                 orElse:
                     () => BuildingModel(
                       id: 0,
                       villageId: villageId,
-                      type: BuildingType.storage.toString(),
+                      type: BuildingType.warehouse.toString(),
                       level: 1,
                       createdAt: DateTime.now().millisecondsSinceEpoch,
                     ),
