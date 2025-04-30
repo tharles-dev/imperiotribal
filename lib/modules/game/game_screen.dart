@@ -4,6 +4,8 @@ import 'package:imperio_tribal_app/data/models/user_model.dart';
 import 'package:imperio_tribal_app/data/models/village_model.dart';
 import 'package:imperio_tribal_app/data/repositories/user_repository.dart';
 import 'package:imperio_tribal_app/data/repositories/village_repository.dart';
+import 'package:imperio_tribal_app/modules/village/npc_village_screen.dart';
+import 'package:imperio_tribal_app/modules/village/village_screen.dart';
 import 'package:imperio_tribal_app/shared/controllers/game_controller.dart';
 import 'package:imperio_tribal_app/shared/widgets/game_map.dart';
 
@@ -36,10 +38,12 @@ class _GameScreenState extends State<GameScreen> {
 
     final currentUser = _gameController.currentUser.value!;
     final isNpc = village.isNpc(currentUser);
-    Get.snackbar(
-      'Aldeia ${isNpc ? 'NPC' : 'do Jogador'}',
-      'Posição: (${village.x}, ${village.y})',
-    );
+
+    if (isNpc) {
+      Get.to(() => NpcVillageScreen(village: village));
+    } else {
+      Get.to(() => VillageScreen(village: village));
+    }
   }
 
   @override
