@@ -44,6 +44,22 @@ class BuildingModel {
     }
   }
 
+  BuildingModel copyWith({
+    int? id,
+    int? villageId,
+    String? type,
+    int? level,
+    int? createdAt,
+  }) {
+    return BuildingModel(
+      id: id ?? this.id,
+      villageId: villageId ?? this.villageId,
+      type: type ?? this.type,
+      level: level ?? this.level,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   // Tipos de edifícios disponíveis
   static const String townHall = 'town_hall';
   static const String warehouse = 'warehouse';

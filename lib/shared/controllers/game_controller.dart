@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:imperio_tribal_app/core/database/database_helper.dart';
 import 'package:imperio_tribal_app/core/utils/logger.dart';
 import 'package:imperio_tribal_app/core/game/game_resource_manager.dart';
+import 'package:imperio_tribal_app/core/game/building_queue_manager.dart';
 import 'package:imperio_tribal_app/data/models/user_model.dart';
 import 'package:imperio_tribal_app/data/repositories/user_repository.dart';
 
@@ -13,6 +14,7 @@ class GameController extends GetxController with WidgetsBindingObserver {
   // Repositórios
   final _userRepository = UserRepository();
   final _resourceManager = GameResourceManager();
+  final _buildingQueueManager = BuildingQueueManager();
 
   // Variáveis reativas
   final isLoading = false.obs;
@@ -30,12 +32,12 @@ class GameController extends GetxController with WidgetsBindingObserver {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
     _initializeGame();
-    _startResourceUpdateLoop();
+    _startUpdateLoop();
   }
 
   @override
   void onClose() {
-    _stopResourceUpdateLoop();
+    _stopUpdateLoop();
     WidgetsBinding.instance.removeObserver(this);
     super.onClose();
   }
@@ -55,13 +57,13 @@ class GameController extends GetxController with WidgetsBindingObserver {
   void _onAppResumed() {
     isAppActive.value = true;
     AppLogger.info('App retomado - Iniciando loop de atualização...');
-    _startResourceUpdateLoop();
+    _startUpdateLoop();
   }
 
   void _onAppHidden() {
     isAppActive.value = false;
     AppLogger.info('App ocultado - Parando loop de atualização...');
-    _stopResourceUpdateLoop();
+    _stopUpdateLoop();
   }
 
   Future<void> _initializeGame() async {
@@ -86,8 +88,11 @@ class GameController extends GetxController with WidgetsBindingObserver {
         currentUser.value = mainUser;
         AppLogger.info('Usuário atual carregado: ${mainUser.name}');
 
-        // Atualiza recursos para calcular tempo offline
-        await _resourceManager.updateAllVillages();
+        // Atualiza recursos e construções para calcular tempo offline
+        await Future.wait([
+          _resourceManager.updateAllVillages(),
+          _buildingQueueManager.processAllQueues(),
+        ]);
       }
     } catch (e, stackTrace) {
       AppLogger.error('Erro ao inicializar o jogo', e, stackTrace);
@@ -97,17 +102,21 @@ class GameController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  // Inicia o loop de atualização de recursos a cada 10 segundos
-  void _startResourceUpdateLoop() {
-    _stopResourceUpdateLoop(); // Garante que não há outro timer rodando
+  // Inicia o loop de atualização a cada 10 segundos
+  void _startUpdateLoop() {
+    _stopUpdateLoop(); // Garante que não há outro timer rodando
 
     _updateTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
       if (!isLoading.value && isAppActive.value && !isUpdating.value) {
         try {
           isUpdating.value = true;
-          await _resourceManager.updateAllVillages();
+          // Processa recursos e construções em paralelo
+          await Future.wait([
+            _resourceManager.updateAllVillages(),
+            _buildingQueueManager.processAllQueues(),
+          ]);
         } catch (e, stackTrace) {
-          AppLogger.error('Erro ao atualizar recursos', e, stackTrace);
+          AppLogger.error('Erro ao atualizar jogo', e, stackTrace);
         } finally {
           isUpdating.value = false;
         }
@@ -116,7 +125,7 @@ class GameController extends GetxController with WidgetsBindingObserver {
   }
 
   // Para o loop de atualização
-  void _stopResourceUpdateLoop() {
+  void _stopUpdateLoop() {
     _updateTimer?.cancel();
     _updateTimer = null;
   }

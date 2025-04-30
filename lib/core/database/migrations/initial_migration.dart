@@ -63,11 +63,13 @@ class InitialMigration {
         CREATE TABLE upgrades_queue (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           building_id INTEGER NOT NULL,
+          village_id INTEGER NOT NULL,
           target_level INTEGER NOT NULL,
           start_time INTEGER NOT NULL,
           end_time INTEGER NOT NULL,
           status TEXT NOT NULL DEFAULT 'pending',
-          FOREIGN KEY (building_id) REFERENCES buildings (id)
+          FOREIGN KEY (building_id) REFERENCES buildings (id),
+          FOREIGN KEY (village_id) REFERENCES villages (id)
         )
       ''');
 
