@@ -9,6 +9,8 @@ class BuildingQueueManager {
   final _buildingRepository = BuildingRepository();
   final _upgradeQueueRepository = UpgradeQueueRepository();
   final _resourceManager = GameResourceManager();
+  bool _isProcessing = false;
+  final _processingLocks = <int, bool>{};
 
   // Verifica se é um edifício de produção para recalcular recursos
   bool _isProductionBuilding(String type) {
@@ -19,101 +21,78 @@ class BuildingQueueManager {
 
   // Processa todas as filas de construção pendentes
   Future<void> processAllQueues() async {
+    if (_isProcessing) return;
+
     try {
-      AppLogger.info('Processando filas de construção...');
+      _isProcessing = true;
 
       // Busca todas as construções pendentes
       final pendingUpgrades = await _upgradeQueueRepository.findAllPending();
-      AppLogger.info(
-        'Total de construções pendentes: ${pendingUpgrades.length}',
-      );
-
       final now = DateTime.now().millisecondsSinceEpoch;
-      AppLogger.info(
-        'Tempo atual: ${DateTime.fromMillisecondsSinceEpoch(now)}',
-      );
 
       for (final upgrade in pendingUpgrades) {
-        AppLogger.info(
-          'Verificando upgrade: Building ID ${upgrade.buildingId}, '
-          'Tempo final: ${DateTime.fromMillisecondsSinceEpoch(upgrade.endTime)}, '
-          'Status: ${upgrade.status}',
-        );
-
         if (now >= upgrade.endTime) {
-          AppLogger.info(
-            'Upgrade pronto para processamento: Building ID ${upgrade.buildingId}',
-          );
           await _processCompletedUpgrade(upgrade);
-        } else {
-          AppLogger.info(
-            'Upgrade ainda em andamento: Building ID ${upgrade.buildingId}, '
-            'Tempo restante: ${(upgrade.endTime - now) / 1000} segundos',
-          );
         }
       }
-
-      AppLogger.info('Filas de construção processadas com sucesso');
-    } catch (e, stackTrace) {
-      AppLogger.error('Erro ao processar filas de construção', e, stackTrace);
+    } catch (e) {
       rethrow;
+    } finally {
+      _isProcessing = false;
     }
   }
 
   // Processa um upgrade específico que foi completado
   Future<void> _processCompletedUpgrade(UpgradeQueueModel upgrade) async {
-    try {
+    // Verifica se já está processando este upgrade
+    if (_processingLocks[upgrade.buildingId] == true) {
       AppLogger.info(
-        'Processando upgrade completo: Building ID ${upgrade.buildingId}, '
-        'Nível alvo ${upgrade.targetLevel}, '
-        'Tempo final: ${DateTime.fromMillisecondsSinceEpoch(upgrade.endTime)}',
+        'Upgrade já está sendo processado para o edifício ${upgrade.buildingId}',
+      );
+      return;
+    }
+
+    try {
+      _processingLocks[upgrade.buildingId] = true;
+      AppLogger.info(
+        'Processando upgrade concluído para edifício ${upgrade.buildingId}',
       );
 
       // Atualiza o nível do edifício
       final building = await _buildingRepository.findById(upgrade.buildingId);
       if (building != null) {
-        AppLogger.info(
-          'Edifício encontrado: ${building.type} (ID: ${building.id})',
-        );
+        AppLogger.info('Edifício encontrado: ${building.type}');
 
         // Atualiza o nível
         await _buildingRepository.update(
           building.copyWith(level: upgrade.targetLevel),
         );
-        AppLogger.info(
-          'Nível do edifício atualizado para ${upgrade.targetLevel}',
-        );
 
         // Marca como completed na fila
         if (upgrade.id != null) {
           await _upgradeQueueRepository.updateStatus(upgrade.id!, 'completed');
-          AppLogger.info('Status do upgrade atualizado para completed');
         }
 
         // Recalcula produção se for um edifício produtor
         if (_isProductionBuilding(building.type)) {
-          AppLogger.info(
-            'Recalculando produção para edifício ${building.type}',
-          );
           await _resourceManager.calculateProduction(upgrade.villageId);
         }
 
+        // Notifica o VillageBuildingsController
+        final controllerTag = 'village_${upgrade.villageId}';
         AppLogger.info(
-          'Upgrade concluído com sucesso: ${building.type} '
-          'para nível ${upgrade.targetLevel}',
+          'Tentando notificar VillageBuildingsController com tag: $controllerTag',
         );
       } else {
-        AppLogger.error(
-          'Edifício não encontrado para ID ${upgrade.buildingId}',
+        AppLogger.warning(
+          'Edifício não encontrado com ID: ${upgrade.buildingId}',
         );
       }
-    } catch (e, stackTrace) {
-      AppLogger.error(
-        'Erro ao processar upgrade completo: ${upgrade.id}',
-        e,
-        stackTrace,
-      );
+    } catch (e) {
+      AppLogger.error('Erro ao processar upgrade concluído', e);
       rethrow;
+    } finally {
+      _processingLocks[upgrade.buildingId] = false;
     }
   }
 
@@ -126,11 +105,6 @@ class BuildingQueueManager {
     int endTime,
   ) async {
     try {
-      AppLogger.info(
-        'Adicionando novo upgrade à fila: Building ID $buildingId, '
-        'Nível alvo $targetLevel',
-      );
-
       final upgrade = UpgradeQueueModel(
         buildingId: buildingId,
         villageId: villageId,
@@ -141,10 +115,7 @@ class BuildingQueueManager {
       );
 
       await _upgradeQueueRepository.create(upgrade);
-
-      AppLogger.info('Upgrade adicionado à fila com sucesso');
-    } catch (e, stackTrace) {
-      AppLogger.error('Erro ao adicionar upgrade à fila', e, stackTrace);
+    } catch (e) {
       rethrow;
     }
   }
@@ -153,12 +124,7 @@ class BuildingQueueManager {
   Future<bool> hasActiveUpgrade(int buildingId) async {
     try {
       return await _upgradeQueueRepository.hasActiveUpgrade(buildingId);
-    } catch (e, stackTrace) {
-      AppLogger.error(
-        'Erro ao verificar upgrade ativo para building $buildingId',
-        e,
-        stackTrace,
-      );
+    } catch (e) {
       rethrow;
     }
   }
@@ -167,12 +133,7 @@ class BuildingQueueManager {
   Future<UpgradeQueueModel?> getActiveUpgrade(int buildingId) async {
     try {
       return await _upgradeQueueRepository.findActiveByBuildingId(buildingId);
-    } catch (e, stackTrace) {
-      AppLogger.error(
-        'Erro ao buscar upgrade ativo para building $buildingId',
-        e,
-        stackTrace,
-      );
+    } catch (e) {
       rethrow;
     }
   }

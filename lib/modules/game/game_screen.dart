@@ -5,9 +5,10 @@ import 'package:imperio_tribal_app/data/models/village_model.dart';
 import 'package:imperio_tribal_app/data/repositories/user_repository.dart';
 import 'package:imperio_tribal_app/data/repositories/village_repository.dart';
 import 'package:imperio_tribal_app/modules/village/npc_village_screen.dart';
-import 'package:imperio_tribal_app/modules/village/village_screen.dart';
 import 'package:imperio_tribal_app/shared/controllers/game_controller.dart';
 import 'package:imperio_tribal_app/shared/widgets/game_map.dart';
+
+import '../../core/routes/app_pages.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -42,7 +43,7 @@ class _GameScreenState extends State<GameScreen> {
     if (isNpc) {
       Get.to(() => NpcVillageScreen(village: village));
     } else {
-      Get.to(() => VillageScreen(village: village));
+      Get.toNamed(Routes.village, arguments: village);
     }
   }
 

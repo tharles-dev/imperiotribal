@@ -1,37 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:imperio_tribal_app/data/models/resource_model.dart';
-import 'package:imperio_tribal_app/data/repositories/resource_repository.dart';
-import 'package:imperio_tribal_app/core/constants/building_constants.dart';
-import 'package:imperio_tribal_app/data/repositories/building_repository.dart';
-import 'package:imperio_tribal_app/data/models/building_type.dart';
+import 'package:get/get.dart';
+import 'package:imperio_tribal_app/shared/controllers/village_resources_controller.dart';
 
-class VillageResources extends StatelessWidget {
-  final int villageId;
-  final _resourceRepository = ResourceRepository();
-  final _buildingRepository = BuildingRepository();
+class ResourceItem extends StatelessWidget {
+  final String icon;
+  final int amount;
+  final int maxCapacity;
+  final bool isAtCapacity;
 
-  VillageResources({super.key, required this.villageId});
+  const ResourceItem({
+    super.key,
+    required this.icon,
+    required this.amount,
+    required this.maxCapacity,
+    required this.isAtCapacity,
+  });
 
-  Future<(ResourceModel, int, int)> _loadResourcesAndCapacity() async {
-    final resources = await _resourceRepository.findByVillageId(villageId);
-    if (resources == null) throw Exception('Recursos não encontrados');
-
-    final buildings = await _buildingRepository.findByVillageId(villageId);
-
-    // Procura o armazém ou cria um novo
-    final storage = buildings.firstWhere(
-      (building) => building.type == BuildingType.warehouse.name,
-    );
-
-    final maxCapacity = BuildingConstants.calculateStorageCapacity(
-      storage.level,
-    );
-
-    return (resources, maxCapacity, storage.level);
-  }
-
-  Widget _buildResourceItem(String icon, int amount, int maxCapacity) {
-    final isAtCapacity = amount >= maxCapacity;
+  @override
+  Widget build(BuildContext context) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -64,8 +50,15 @@ class VillageResources extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildStorageItem(int maxCapacity) {
+class StorageItem extends StatelessWidget {
+  final int maxCapacity;
+
+  const StorageItem({super.key, required this.maxCapacity});
+
+  @override
+  Widget build(BuildContext context) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -96,25 +89,37 @@ class VillageResources extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildVerticalDivider() {
-    return const SizedBox(width: 4);
-  }
+class VillageResources extends StatelessWidget {
+  final int villageId;
+
+  const VillageResources({super.key, required this.villageId});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<(ResourceModel, int, int)>(
-      future: _loadResourcesAndCapacity(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    final controller = Get.find<VillageResourcesController>(
+      tag: 'village_$villageId',
+    );
 
-        if (snapshot.hasError) {
-          return Text('Erro ao carregar recursos: ${snapshot.error}');
-        }
+    return Obx(() {
+      // Primeiro Obx só para loading e erros
+      if (controller.isLoading.value && controller.resources.value == null) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-        final (resources, maxCapacity, _) = snapshot.data!;
+      if (controller.hasError.value) {
+        return Text(controller.errorMessage.value);
+      }
+
+      if (controller.resources.value == null) {
+        return const Text('Recursos não encontrados');
+      }
+
+      // Segundo Obx para os recursos
+      return Obx(() {
+        final resourceData = controller.resources.value;
+        final capacity = controller.maxCapacity.value;
 
         return Container(
           width: double.infinity,
@@ -135,17 +140,32 @@ class VillageResources extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildResourceItem('wood', resources.wood, maxCapacity),
-              _buildVerticalDivider(),
-              _buildResourceItem('clay', resources.clay, maxCapacity),
-              _buildVerticalDivider(),
-              _buildResourceItem('iron', resources.iron, maxCapacity),
-              _buildVerticalDivider(),
-              _buildStorageItem(maxCapacity),
+              ResourceItem(
+                icon: 'wood',
+                amount: resourceData?.wood ?? 0,
+                maxCapacity: capacity,
+                isAtCapacity: controller.isAtCapacity(resourceData?.wood ?? 0),
+              ),
+              const SizedBox(width: 4),
+              ResourceItem(
+                icon: 'clay',
+                amount: resourceData?.clay ?? 0,
+                maxCapacity: capacity,
+                isAtCapacity: controller.isAtCapacity(resourceData?.clay ?? 0),
+              ),
+              const SizedBox(width: 4),
+              ResourceItem(
+                icon: 'iron',
+                amount: resourceData?.iron ?? 0,
+                maxCapacity: capacity,
+                isAtCapacity: controller.isAtCapacity(resourceData?.iron ?? 0),
+              ),
+              const SizedBox(width: 4),
+              StorageItem(maxCapacity: capacity),
             ],
           ),
         );
-      },
-    );
+      });
+    });
   }
 }

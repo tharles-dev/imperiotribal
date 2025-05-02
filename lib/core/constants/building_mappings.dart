@@ -2,11 +2,11 @@ import 'package:imperio_tribal_app/data/models/building_type.dart';
 
 class BuildingMappings {
   static const Map<String, BuildingType> typeMap = {
-    'town_hall': BuildingType.townHall,
+    'townHall': BuildingType.townHall,
     'warehouse': BuildingType.warehouse,
     'farm': BuildingType.farm,
-    'iron_mine': BuildingType.ironMine,
-    'clay_pit': BuildingType.clayPit,
+    'ironMine': BuildingType.ironMine,
+    'clayPit': BuildingType.clayPit,
     'woodcutter': BuildingType.woodcutter,
     'barracks': BuildingType.barracks,
     'stable': BuildingType.stable,

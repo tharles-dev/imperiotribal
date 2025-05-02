@@ -48,21 +48,24 @@ class GameController extends GetxController with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         _onAppResumed();
         break;
-      default:
+      case AppLifecycleState.detached:
         _onAppHidden();
+        break;
+      case AppLifecycleState.inactive:
+        _onAppHidden();
+        break;
+      default:
         break;
     }
   }
 
   void _onAppResumed() {
     isAppActive.value = true;
-    AppLogger.info('App retomado - Iniciando loop de atualização...');
     _startUpdateLoop();
   }
 
   void _onAppHidden() {
     isAppActive.value = false;
-    AppLogger.info('App ocultado - Parando loop de atualização...');
     _stopUpdateLoop();
   }
 
@@ -71,22 +74,17 @@ class GameController extends GetxController with WidgetsBindingObserver {
       setLoading(true);
       clearError();
 
-      AppLogger.info('Inicializando o jogo...');
-
       // Inicializa o banco de dados
       await DatabaseHelper.instance.database;
-      AppLogger.info('Banco de dados inicializado com sucesso');
 
       // Verifica se existe usuário
       final hasUser = await _userRepository.exists();
-      AppLogger.info('Verificando existência de usuário: $hasUser');
 
       if (hasUser) {
         // Carrega o primeiro usuário (não NPC) como usuário atual
         final users = await _userRepository.findAll();
         final mainUser = users.firstWhere((user) => !user.isNpc);
         currentUser.value = mainUser;
-        AppLogger.info('Usuário atual carregado: ${mainUser.name}');
 
         // Atualiza recursos e construções para calcular tempo offline
         await Future.wait([
@@ -104,12 +102,16 @@ class GameController extends GetxController with WidgetsBindingObserver {
 
   // Inicia o loop de atualização a cada 10 segundos
   void _startUpdateLoop() {
-    _stopUpdateLoop(); // Garante que não há outro timer rodando
+    if (_updateTimer?.isActive ?? false) {
+      return;
+    }
 
+    _updateTimer?.cancel();
     _updateTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
       if (!isLoading.value && isAppActive.value && !isUpdating.value) {
         try {
           isUpdating.value = true;
+
           // Processa recursos e construções em paralelo
           await Future.wait([
             _resourceManager.updateAllVillages(),
@@ -126,8 +128,10 @@ class GameController extends GetxController with WidgetsBindingObserver {
 
   // Para o loop de atualização
   void _stopUpdateLoop() {
-    _updateTimer?.cancel();
-    _updateTimer = null;
+    if (_updateTimer?.isActive ?? false) {
+      _updateTimer?.cancel();
+      _updateTimer = null;
+    }
   }
 
   // Métodos

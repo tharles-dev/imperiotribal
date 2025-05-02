@@ -61,11 +61,11 @@ class BuildingModel {
   }
 
   // Tipos de edifícios disponíveis
-  static const String townHall = 'town_hall';
+  static const String townHall = 'townHall';
   static const String warehouse = 'warehouse';
   static const String farm = 'farm';
-  static const String ironMine = 'iron_mine';
-  static const String clayPit = 'clay_pit';
+  static const String ironMine = 'ironMine';
+  static const String clayPit = 'clayPit';
   static const String woodcutter = 'woodcutter';
   static const String barracks = 'barracks';
   static const String stable = 'stable';

@@ -124,4 +124,26 @@ class BuildingConstants {
         return 7;
     }
   }
+
+  // Nomes dos edifícios
+  static String getBuildingName(BuildingType type) {
+    switch (type) {
+      case BuildingType.townHall:
+        return 'Centro da Vila';
+      case BuildingType.warehouse:
+        return 'Armazém';
+      case BuildingType.farm:
+        return 'Fazenda';
+      case BuildingType.woodcutter:
+        return 'Lenhador';
+      case BuildingType.clayPit:
+        return 'Poço de Argila';
+      case BuildingType.ironMine:
+        return 'Mina de Ferro';
+      case BuildingType.barracks:
+        return 'Quartel';
+      case BuildingType.stable:
+        return 'Estábulo';
+    }
+  }
 }

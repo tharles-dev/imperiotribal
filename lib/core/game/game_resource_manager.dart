@@ -16,39 +16,16 @@ class GameResourceManager {
       // Busca todos os edifícios da aldeia
       final buildings = await _buildingRepository.findByVillageId(villageId);
 
-      // Encontra o nível do armazém
-      final storageLevel =
-          buildings
-              .firstWhere(
-                (building) =>
-                    building.type == BuildingType.warehouse.toString(),
-                orElse:
-                    () => BuildingModel(
-                      id: 0,
-                      villageId: villageId,
-                      type: BuildingType.warehouse.toString(),
-                      level: 1,
-                      createdAt: DateTime.now().millisecondsSinceEpoch,
-                    ),
-              )
-              .level;
-
-      // Calcula a capacidade máxima do armazém
-      final maxCapacity = BuildingConstants.calculateStorageCapacity(
-        storageLevel,
-      );
-
       // Encontra os níveis dos produtores
       final woodcutterLevel =
           buildings
               .firstWhere(
-                (building) =>
-                    building.type == BuildingType.woodcutter.toString(),
+                (building) => building.type == BuildingType.woodcutter.name,
                 orElse:
                     () => BuildingModel(
                       id: 0,
                       villageId: villageId,
-                      type: BuildingType.woodcutter.toString(),
+                      type: BuildingType.woodcutter.name,
                       level: 1,
                       createdAt: DateTime.now().millisecondsSinceEpoch,
                     ),
@@ -58,12 +35,12 @@ class GameResourceManager {
       final clayPitLevel =
           buildings
               .firstWhere(
-                (building) => building.type == BuildingType.clayPit.toString(),
+                (building) => building.type == BuildingType.clayPit.name,
                 orElse:
                     () => BuildingModel(
                       id: 0,
                       villageId: villageId,
-                      type: BuildingType.clayPit.toString(),
+                      type: BuildingType.clayPit.name,
                       level: 1,
                       createdAt: DateTime.now().millisecondsSinceEpoch,
                     ),
@@ -73,12 +50,12 @@ class GameResourceManager {
       final ironMineLevel =
           buildings
               .firstWhere(
-                (building) => building.type == BuildingType.ironMine.toString(),
+                (building) => building.type == BuildingType.ironMine.name,
                 orElse:
                     () => BuildingModel(
                       id: 0,
                       villageId: villageId,
-                      type: BuildingType.ironMine.toString(),
+                      type: BuildingType.ironMine.name,
                       level: 1,
                       createdAt: DateTime.now().millisecondsSinceEpoch,
                     ),
@@ -94,10 +71,6 @@ class GameResourceManager {
       );
       final ironProduction = ProductionRates.calculateIronProduction(
         ironMineLevel,
-      );
-
-      AppLogger.info(
-        'Produção calculada para aldeia $villageId: storage_level=$storageLevel, max_capacity=$maxCapacity, wood_production=$woodProduction, clay_production=$clayProduction, iron_production=$ironProduction',
       );
 
       // Atualiza as taxas de produção no banco
@@ -130,13 +103,12 @@ class GameResourceManager {
       final storageLevel =
           buildings
               .firstWhere(
-                (building) =>
-                    building.type == BuildingType.warehouse.toString(),
+                (building) => building.type == BuildingType.warehouse.name,
                 orElse:
                     () => BuildingModel(
                       id: 0,
                       villageId: villageId,
-                      type: BuildingType.warehouse.toString(),
+                      type: BuildingType.warehouse.name,
                       level: 1,
                       createdAt: DateTime.now().millisecondsSinceEpoch,
                     ),
@@ -160,10 +132,6 @@ class GameResourceManager {
       final limitedWood = newWood > maxCapacity ? maxCapacity : newWood;
       final limitedClay = newClay > maxCapacity ? maxCapacity : newClay;
       final limitedIron = newIron > maxCapacity ? maxCapacity : newIron;
-
-      AppLogger.info(
-        'Recursos atualizados para aldeia $villageId: seconds_passed=$secondsPassed, storage_level=$storageLevel, max_capacity=$maxCapacity, old_wood=${resources.wood}, new_wood=$limitedWood, old_clay=${resources.clay}, new_clay=$limitedClay, old_iron=${resources.iron}, new_iron=$limitedIron',
-      );
 
       // Atualiza os recursos no banco
       await _resourceRepository.updateResources(
@@ -198,13 +166,6 @@ class GameResourceManager {
     Map<String, int> upgradeCost,
   ) async {
     try {
-      AppLogger.info(
-        'Tentando deduzir recursos para construção na vila $villageId: '
-        'Madeira: ${upgradeCost['wood']}, '
-        'Argila: ${upgradeCost['clay']}, '
-        'Ferro: ${upgradeCost['iron']}',
-      );
-
       // Busca os recursos atuais
       final resources = await _resourceRepository.findByVillageId(villageId);
       if (resources == null) {
@@ -216,7 +177,6 @@ class GameResourceManager {
       if (resources.wood < upgradeCost['wood']! ||
           resources.clay < upgradeCost['clay']! ||
           resources.iron < upgradeCost['iron']!) {
-        AppLogger.info('Recursos insuficientes para construção');
         return false;
       }
 
@@ -228,13 +188,6 @@ class GameResourceManager {
         iron: resources.iron - upgradeCost['iron']!,
       );
 
-      AppLogger.info(
-        'Recursos deduzidos com sucesso. Novos valores: '
-        'Madeira: ${resources.wood - upgradeCost['wood']!}, '
-        'Argila: ${resources.clay - upgradeCost['clay']!}, '
-        'Ferro: ${resources.iron - upgradeCost['iron']!}',
-      );
-
       return true;
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -242,6 +195,20 @@ class GameResourceManager {
         e,
         stackTrace,
       );
+      return false;
+    }
+  }
+
+  Future<bool> hasEnoughResources(int villageId, Map<String, int> cost) async {
+    try {
+      final resources = await _resourceRepository.findByVillageId(villageId);
+      if (resources == null) return false;
+
+      return resources.wood >= (cost['wood'] ?? 0) &&
+          resources.clay >= (cost['clay'] ?? 0) &&
+          resources.iron >= (cost['iron'] ?? 0);
+    } catch (e) {
+      AppLogger.error('Erro ao verificar recursos', e);
       return false;
     }
   }

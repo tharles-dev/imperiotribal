@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:imperio_tribal_app/data/models/building_model.dart';
-import 'package:imperio_tribal_app/data/repositories/building_repository.dart';
+import 'package:get/get.dart';
+import 'package:imperio_tribal_app/shared/controllers/village_buildings_controller.dart';
+import 'package:imperio_tribal_app/core/utils/logger.dart';
+import 'building_upgrade_queue.dart';
 import 'available_buildings.dart';
 import 'locked_buildings.dart';
-import 'building_upgrade_queue.dart';
 
 class VillageBuildings extends StatefulWidget {
   final int villageId;
@@ -15,48 +16,43 @@ class VillageBuildings extends StatefulWidget {
 }
 
 class _VillageBuildingsState extends State<VillageBuildings> {
-  final _buildingRepository = BuildingRepository();
-  List<BuildingModel> _buildings = [];
-  bool _isLoading = true;
+  late final VillageBuildingsController _buildingsController;
 
   @override
   void initState() {
     super.initState();
-    _loadBuildings();
+    AppLogger.info(
+      'VillageBuildings - initState - villageId: ${widget.villageId}',
+    );
+    _buildingsController = Get.put(
+      VillageBuildingsController(),
+      tag: 'village_${widget.villageId}',
+    );
+    _buildingsController.loadBuildings(widget.villageId);
   }
 
-  Future<void> _loadBuildings() async {
-    try {
-      setState(() => _isLoading = true);
-      final buildings = await _buildingRepository.findByVillageId(
-        widget.villageId,
-      );
-      setState(() {
-        _buildings = buildings;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erro ao carregar edifícios'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  @override
+  void dispose() {
+    AppLogger.info(
+      'VillageBuildings - dispose - villageId: ${widget.villageId}',
+    );
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    AppLogger.info('VillageBuildings - build - villageId: ${widget.villageId}');
+    return Obx(() {
+      AppLogger.info(
+        'VillageBuildings - Obx rebuild - villageId: ${widget.villageId} - isLoading: ${_buildingsController.isLoading.value}',
+      );
 
-    return RefreshIndicator(
-      onRefresh: _loadBuildings,
-      child: SingleChildScrollView(
+      if (_buildingsController.isLoading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      return SingleChildScrollView(
+        physics: const ClampingScrollPhysics(), // Evita efeito de overscroll
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,7 +63,15 @@ class _VillageBuildingsState extends State<VillageBuildings> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            BuildingUpgradeQueue(villageId: widget.villageId),
+            BuildingUpgradeQueue(
+              villageId: widget.villageId,
+              onUpgradeComplete: () {
+                AppLogger.info(
+                  'VillageBuildings - onUpgradeComplete - villageId: ${widget.villageId}',
+                );
+                _buildingsController.loadBuildings(widget.villageId);
+              },
+            ),
             const SizedBox(height: 24),
 
             // Edifícios disponíveis
@@ -78,14 +82,29 @@ class _VillageBuildingsState extends State<VillageBuildings> {
             const SizedBox(height: 8),
             AvailableBuildings(
               villageId: widget.villageId,
-              buildings: _buildings,
-              onUpgrade: _loadBuildings,
+              onUpgrade: () {
+                AppLogger.info(
+                  'VillageBuildings - onUpgrade - villageId: ${widget.villageId}',
+                );
+                _buildingsController.loadBuildings(widget.villageId);
+              },
             ),
-            const SizedBox(height: 4),
-            LockedBuildings(buildings: _buildings),
+            const SizedBox(height: 24),
+
+            // Edifícios bloqueados
+            LockedBuildings(
+              buildings: _buildingsController.buildings,
+              villageId: widget.villageId,
+              onBuildingCreated: () {
+                AppLogger.info(
+                  'VillageBuildings - onBuildingCreated - villageId: ${widget.villageId}',
+                );
+                _buildingsController.loadBuildings(widget.villageId);
+              },
+            ),
           ],
         ),
-      ),
-    );
+      );
+    });
   }
 }
